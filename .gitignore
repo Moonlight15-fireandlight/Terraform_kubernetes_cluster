@@ -1,0 +1,9 @@
+*.tfvars
+*/variables.tf
+variables.tf
+*/terraform.tfstate
+learn-terraform-refresh/
+dynamodbudemy/
+DeployEc2Terraform/
+.terraform/
+variables.txt
