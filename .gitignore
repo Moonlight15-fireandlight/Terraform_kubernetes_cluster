@@ -2,6 +2,8 @@
 */variables.tf
 variables.tf
 */terraform.tfstate
+terraform.tfstate
+terraform.tfstate.backup
 learn-terraform-refresh/
 dynamodbudemy/
 DeployEc2Terraform/

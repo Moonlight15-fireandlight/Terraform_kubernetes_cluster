@@ -210,7 +210,7 @@ resource "aws_instance" "nodes_servers" {
 
 }
 
-resource "aws_security_group" "nodes_security_group" {
+resource "aws_security_group" "bastion_security_group" {
 
   name = "BastionSG"
 
@@ -250,7 +250,7 @@ resource "aws_security_group" "nodes_security_group" {
 
 }
 
-resource "aws_security_group" "server_security_group" {
+resource "aws_security_group" "nodes_security_group" {
 
   name = "Server-sg"
 
@@ -269,7 +269,7 @@ resource "aws_security_group_rule" "private_sg_ingress_rule" {
   protocol  = "tcp"
   #cidr_blocks       = [ aws_security_group.bastion_sg.id ]
   source_security_group_id = aws_security_group.bastion_security_group.id
-  security_group_id        = aws_security_group.server_security_group.id
+  security_group_id        = aws_security_group.nodes_security_group.id
 }
 
 resource "aws_security_group_rule" "private_sg_egress_rule" {
@@ -278,7 +278,7 @@ resource "aws_security_group_rule" "private_sg_egress_rule" {
   to_port           = 0
   protocol          = "-1"
   cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.server_security_group.id
+  security_group_id = aws_security_group.nodes_security_group.id
 }
 
 
@@ -290,6 +290,6 @@ output "bastion_public_ip" {
 
 output "private" {
 
-  value = aws_instance.private_server.*.private_ip
+  value = aws_instance.nodes_servers.*.private_ip
   
 }
