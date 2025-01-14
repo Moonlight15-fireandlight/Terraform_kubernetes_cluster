@@ -52,9 +52,9 @@ resource "aws_subnet" "publicsunet" {
 
   vpc_id            = aws_vpc.main_vpc.id
 
-  count             = length(var.cidr_pub_subnets)
+  #count             = length(var.cidr_pub_subnets)
 
-  cidr_block        = var.cidr_pub_subnets[count.index]
+  cidr_block        = var.cidr_pub_subnets
 
   availability_zone = data.aws_availability_zones.available.names[0]
 
@@ -87,7 +87,7 @@ resource "aws_nat_gateway" "natgw_terraform" {
 
   allocation_id = aws_eip.eip_nat_terraform.id
 
-  subnet_id     = aws_subnet.publicsunet[0].id # el NAT gateway se encontra en el primer subnet de la lista del variable
+  subnet_id     = aws_subnet.publicsunet.id # el NAT gateway se encontra en el primer subnet de la lista del variable
 
   tags = {
     Name = "NATGATEWAY_TERRAFORM"
@@ -138,9 +138,9 @@ resource "aws_route_table" "private" {
 
 resource "aws_route_table_association" "topublic" {
   
-  count = length(var.cidr_pub_subnets)
+  #count = length(var.cidr_pub_subnets)
 
-  subnet_id      = aws_subnet.publicsunet[count.index].id 
+  subnet_id      = aws_subnet.publicsunet.id 
   route_table_id = aws_route_table.public.id
 }
 
@@ -154,16 +154,16 @@ resource "aws_route_table_association" "toprivate" {
 
 # Deploy EC2 AWS
 
-resource "aws_instance" "public_server" {
+resource "aws_instance" "bastion_server" {
 
-  count = length(var.cidr_pub_subnets)
+  #count = length(var.cidr_pub_subnets)
   #name = "terraform-testing" #agregar un nombre a la instancia
 
   #Numero de servidores en base al tipo de instancias que se muestra en la variable instance type
   #count = length(var.instance_type)
 
   ami           = var.ami
-  instance_type = var.instance_type
+  instance_type = "t2.micro"
   key_name      = "DockerOregon"
 
 
@@ -175,38 +175,13 @@ resource "aws_instance" "public_server" {
   }
 
   vpc_security_group_ids = [aws_security_group.bastion_security_group.id]
-  subnet_id              = aws_subnet.publicsunet[count.index].id
+  subnet_id              = aws_subnet.publicsunet.id # solo habra 1 bastion para los master y wokrer nodes
   #subnet_id = module.vpc[each.key].public_subnets[*] #para lograr que una instancia este en su respectivo subred 
 
   associate_public_ip_address = true
 
 
   #depends_on = [ aws_internet_gateway.igw ] #Como exportar esto
-
-}
-
-resource "aws_instance" "nodes_servers" {
-
-  count = var.private_number_instances
-  #count = length(var.cird_priv_subnets)
-
-
-  ami           = var.ami
-  instance_type = var.instance_type
-  key_name      = "DockerOregon"
-
-  tags = {
-
-    #Name = " ${var.region} - ${terraform.workspace} "
-    Name = "kubernetes-node-${count.index}"
-
-  }
-
-  vpc_security_group_ids = [ aws_security_group.nodes_security_group.id ]
-  subnet_id              = aws_subnet.privatesubnet[0].id
-  
-
-  associate_public_ip_address = false
 
 }
 
@@ -220,39 +195,73 @@ resource "aws_security_group" "bastion_security_group" {
 
   vpc_id = aws_vpc.main_vpc.id
 
-  dynamic "ingress" {
+}
 
-    for_each = var.bastion_inbound_ports
+resource "aws_security_group_rule" "bastion_security_group_rule_ingress" {
 
-    content {
-      from_port   = ingress.value
-      to_port     = ingress.value
-      protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
+  type              = "ingress"
+  
+  from_port         = 22
+  
+  to_port           = 22
+  
+  protocol          = "tcp"
+  
+  cidr_blocks       = ["0.0.0.0/0"]
+  
+  security_group_id = aws_security_group.bastion_security_group.id
 
-    }
+  description       = "Bastion Server to kubernetes"
+  
+}
+
+resource "aws_security_group_rule" "bastion_security_group_rule_egress" {
+
+  type              = "egress"
+  
+  from_port         = 22
+  
+  to_port           = 22
+  
+  protocol          = "tcp"
+  
+  cidr_blocks       = [ var.vpc_cidr ]
+  
+  security_group_id = aws_security_group.bastion_security_group.id
+
+  description       = "Bastion Server to kubernetes"
+  
+}
+
+resource "aws_instance" "master_nodes" {
+
+  count = var.number_master_nodes
+  #count = length(var.cird_priv_subnets)
+
+
+  ami           = var.ami
+  instance_type = var.nodes_instance_type
+  key_name      = "DockerOregon"
+  user_data     = file("./kubeadmuserdata.sh")
+
+  tags = {
+
+    #Name = " ${var.region} - ${terraform.workspace} "
+    Name = "master-node-${count.index + 1}"
+
   }
 
-  dynamic "egress" {
+  vpc_security_group_ids = [ aws_security_group.master_node_security_group.id ]
+  subnet_id              = aws_subnet.privatesubnet[0].id
+  
 
-    for_each = var.bastion_outbound_ports
-
-    content {
-
-      from_port = egress.value
-      to_port   = egress.value
-      protocol    = "-1"
-      cidr_blocks = ["0.0.0.0/0"]
-
-    }
-    
-  }
+  associate_public_ip_address = false
 
 }
 
-resource "aws_security_group" "nodes_security_group" {
+resource "aws_security_group" "master_node_security_group" {
 
-  name = "Server-sg"
+  name = "master-node-security-group"
 
   description = "Grupo de seguridad configurado para el servidor principal"
 
@@ -262,34 +271,351 @@ resource "aws_security_group" "nodes_security_group" {
 
 }
 
-resource "aws_security_group_rule" "private_sg_ingress_rule" {
-  type      = "ingress"
-  from_port = 22
-  to_port   = 22
-  protocol  = "tcp"
-  #cidr_blocks       = [ aws_security_group.bastion_sg.id ]
-  source_security_group_id = aws_security_group.bastion_security_group.id
-  security_group_id        = aws_security_group.nodes_security_group.id
+resource "aws_security_group_rule" "Kubernetes-API-server" {
+
+  type              = "ingress"
+  
+  from_port         = 6443
+  
+  to_port           = 6443
+  
+  protocol          = "tcp"
+  
+  cidr_blocks       = ["0.0.0.0/0"]
+  
+  security_group_id = aws_security_group.master_node_security_group.id
+
+  description       = "Kubernetes Api Server"
+
 }
 
-resource "aws_security_group_rule" "private_sg_egress_rule" {
+resource "aws_security_group_rule" "etcd-server" {
+
+  type              = "ingress"
+  
+  from_port         = 2379
+  
+  to_port           = 2380
+  
+  protocol          = "tcp"
+  
+  security_group_id = aws_security_group.master_node_security_group.id
+
+  source_security_group_id = aws_security_group.master_node_security_group.id
+
+  description       = "etcd server client API"
+
+}
+
+resource "aws_security_group_rule" "Kubelet-API" {
+
+  type              = "ingress"
+  
+  from_port         = 10250
+  
+  to_port           = 10250
+  
+  protocol          = "tcp"
+  
+  security_group_id = aws_security_group.master_node_security_group.id
+
+  source_security_group_id = aws_security_group.master_node_security_group.id
+
+  description       = "Kubelet API"
+
+}
+
+resource "aws_security_group_rule" "kube-scheduler" {
+
+  type              = "ingress"
+  
+  from_port         = 10259
+  
+  to_port           = 10259
+  
+  protocol          = "tcp"
+  
+  security_group_id = aws_security_group.master_node_security_group.id
+
+  source_security_group_id = aws_security_group.master_node_security_group.id
+
+  description       = "kube-scheduler"
+
+}
+
+resource "aws_security_group_rule" "kube-controller-manager" {
+
+  type              = "ingress"
+  
+  from_port         = 10257
+  
+  to_port           = 10257
+  
+  protocol          = "tcp"
+  
+  security_group_id = aws_security_group.master_node_security_group.id
+
+  source_security_group_id = aws_security_group.master_node_security_group.id
+
+  description       = "kube-controller-manager"
+
+}
+
+resource "aws_security_group_rule" "ssh-from-bastion-ingress" {
+
+  type              = "ingress"
+  
+  from_port         = 22
+  
+  to_port           = 22
+  
+  protocol          = "tcp"
+  
+  security_group_id = aws_security_group.master_node_security_group.id
+
+  source_security_group_id = aws_security_group.bastion_security_group.id
+
+  description       = "SSH from bastion"
+
+}
+
+resource "aws_security_group_rule" "egress-rule01" {
+
   type              = "egress"
+  
+  from_port         = 80
+  
+  to_port           = 80
+  
+  protocol          = "tcp"
+  
+  security_group_id = aws_security_group.master_node_security_group.id
+
+  #source_security_group_id = aws_security_group.bastion_security_group.id
+
+  cidr_blocks       = [ "0.0.0.0/0" ]
+
+  #description       = "SSH from bastion"
+
+}
+
+resource "aws_security_group_rule" "egress-rule02" {
+
+  type              = "egress"
+  
   from_port         = 0
-  to_port           = 0
-  protocol          = "-1"
+  
+  to_port           = 65535
+  
+  protocol          = "tcp"
+  
+  security_group_id = aws_security_group.master_node_security_group.id
+
+  #source_security_group_id = aws_security_group.bastion_security_group.id
+
+  cidr_blocks       = [ var.vpc_cidr ]
+
+  #description       = "SSH from bastion"
+
+}
+
+resource "aws_security_group_rule" "egress-rule03" {
+
+  type              = "egress"
+  
+  from_port         = 6443
+  
+  to_port           = 6443
+  
+  protocol          = "tcp"
+  
+  security_group_id = aws_security_group.master_node_security_group.id
+
+  #source_security_group_id = aws_security_group.bastion_security_group.id
+
+  cidr_blocks       = [ "0.0.0.0/0" ]
+
+  #description       = "SSH from bastion"
+
+}
+
+resource "aws_security_group_rule" "egress-rule04" {
+
+  type              = "egress"
+  
+  from_port         = 10250
+  
+  to_port           = 10250
+  
+  protocol          = "tcp"
+  
+  security_group_id = aws_security_group.master_node_security_group.id
+
+  #source_security_group_id = aws_security_group.bastion_security_group.id
+
+  cidr_blocks       = [ var.vpc_cidr ]
+
+  #description       = "SSH from bastion"
+
+}
+
+resource "aws_security_group_rule" "egress-rule05" {
+
+  type              = "egress"
+  
+  from_port         = 443
+  
+  to_port           = 443
+  
+  protocol          = "tcp"
+  
+  security_group_id = aws_security_group.master_node_security_group.id
+
+  #source_security_group_id = aws_security_group.bastion_security_group.id
+
+  cidr_blocks       = [ "0.0.0.0/0" ]
+
+  #description       = "SSH from bastion"
+
+}
+
+resource "aws_instance" "worker_nodes" {
+
+  count = var.number_worker_nodes
+  #count = length(var.cird_priv_subnets)
+
+
+  ami           = var.ami
+  instance_type = var.nodes_instance_type
+  key_name      = "DockerOregon"
+  user_data     = file("./kubeadmuserdata.sh")
+
+  tags = {
+
+    #Name = " ${var.region} - ${terraform.workspace} "
+    Name = "worker-node-${count.index + 1}"
+
+  }
+
+  vpc_security_group_ids = [ aws_security_group.worker_nodes_security_group.id ]
+  subnet_id              = aws_subnet.privatesubnet[0].id
+  
+
+  associate_public_ip_address = false
+
+}
+
+
+resource "aws_security_group" "worker_nodes_security_group" {
+
+  name = "worker-node-security-group"
+
+  description = "Grupo de seguridad configurado para el servidor principal"
+
+  #for_each = var.project
+
+  vpc_id = aws_vpc.main_vpc.id
+
+}
+
+resource "aws_security_group_rule" "worker-kubelet-API" {
+  type      = "ingress"
+  from_port = 10250
+  to_port   = 10250
+  protocol  = "tcp"
+  #cidr_blocks       = [ aws_security_group.bastion_sg.id ]
+  source_security_group_id = aws_security_group.master_node_security_group.id
+  security_group_id        = aws_security_group.worker_nodes_security_group.id
+  description = "Kubelet API"
+}
+
+resource "aws_security_group_rule" "kube-proxy" {
+  type      = "ingress"
+  from_port = 10256
+  to_port   = 10256
+  protocol  = "tcp"
+  #cidr_blocks       = [ aws_security_group.bastion_sg.id ]
+  source_security_group_id = aws_security_group.worker_nodes_security_group.id
+  security_group_id        = aws_security_group.worker_nodes_security_group.id
+  description = "kube-proxy"
+}
+
+resource "aws_security_group_rule" "services" {
+  type              = "ingress"
+  from_port         = 30000
+  to_port           = 32767
+  protocol          = "tcp"
   cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.nodes_security_group.id
+  security_group_id = aws_security_group.worker_nodes_security_group.id
+  description       = "NodePort Services"
+}
+
+resource "aws_security_group_rule" "bastion-ssh-ingress" {
+
+  type              = "ingress"
+  
+  from_port         = 22
+  
+  to_port           = 22
+  
+  protocol          = "tcp"
+  
+  security_group_id = aws_security_group.worker_nodes_security_group.id
+
+  source_security_group_id = aws_security_group.bastion_security_group.id
+
+  description       = "SSH from bastion"
+
+}
+
+
+resource "aws_security_group_rule" "egress-worker-rule01" {
+
+  type              = "egress"
+
+  from_port         = 80
+
+  to_port           = 80
+
+  protocol          = "tcp"
+
+  cidr_blocks       = ["0.0.0.0/0"]
+
+  security_group_id = aws_security_group.worker_nodes_security_group.id
+
+}
+
+resource "aws_security_group_rule" "egress-worker-rule02" {
+
+  type              = "egress"
+
+  from_port         = 443
+
+  to_port           = 443
+
+  protocol          = "tcp"
+
+  cidr_blocks       = ["0.0.0.0/0"]
+
+  security_group_id = aws_security_group.worker_nodes_security_group.id
+
 }
 
 
 output "bastion_public_ip" {
 
-  value = aws_instance.public_server.*.public_ip
+  value = aws_instance.bastion_server.public_ip
   
 }
 
-output "private" {
+#output "master_node_private_ip" {
 
-  value = aws_instance.nodes_servers.*.private_ip
+#  value = aws_instance.master_nodes.
   
-}
+#}
+
+#output "worker_node_private_ip" {
+
+#  value = aws_instance.worker_nodes
+  
+#}
