@@ -9,3 +9,5 @@ dynamodbudemy/
 DeployEc2Terraform/
 .terraform/
 variables.txt
+.terraform.lock.hcl
+.gitignore
