@@ -242,7 +242,7 @@ resource "aws_instance" "master_nodes" {
   ami           = var.ami
   instance_type = var.nodes_instance_type
   key_name      = "DockerOregon"
-  user_data     = file("./kubeadmuserdata.sh")
+  #user_data     = file("./kubeadmuserdata.sh")
 
   tags = {
 
@@ -271,7 +271,7 @@ resource "aws_security_group" "master_node_security_group" {
 
 }
 
-resource "aws_security_group_rule" "Kubernetes-API-server" {
+resource "aws_security_group_rule" "kubernetes-api-server" {
 
   type              = "ingress"
   
@@ -307,7 +307,7 @@ resource "aws_security_group_rule" "etcd-server" {
 
 }
 
-resource "aws_security_group_rule" "Kubelet-API" {
+resource "aws_security_group_rule" "master-kubelet-api" {
 
   type              = "ingress"
   
@@ -376,6 +376,60 @@ resource "aws_security_group_rule" "ssh-from-bastion-ingress" {
   source_security_group_id = aws_security_group.bastion_security_group.id
 
   description       = "SSH from bastion"
+
+}
+
+resource "aws_security_group_rule" "port-weave-net-01" {
+
+  type              = "ingress"
+  
+  from_port         = 6783
+  
+  to_port           = 6783
+  
+  protocol          = "tcp"
+  
+  security_group_id = aws_security_group.master_node_security_group.id
+
+  cidr_blocks       = ["0.0.0.0/0"]
+
+  description       = "rule 1 to CNI weavenet"
+
+}
+
+resource "aws_security_group_rule" "port-weave-net-02" {
+
+  type              = "ingress"
+  
+  from_port         = 6783
+  
+  to_port           = 6783
+  
+  protocol          = "udp"
+  
+  security_group_id = aws_security_group.master_node_security_group.id
+
+  cidr_blocks       = ["0.0.0.0/0"]
+
+  description       = "rule 2 to CNI weavenet"
+
+}
+
+resource "aws_security_group_rule" "port-weave-net-03" {
+
+  type              = "ingress"
+  
+  from_port         = 6784
+  
+  to_port           = 6784
+  
+  protocol          = "udp"
+  
+  security_group_id = aws_security_group.master_node_security_group.id
+
+  cidr_blocks       = ["0.0.0.0/0"]
+
+  description       = "rule 3 to CNI weavenet"
 
 }
 
@@ -488,7 +542,7 @@ resource "aws_instance" "worker_nodes" {
   ami           = var.ami
   instance_type = var.nodes_instance_type
   key_name      = "DockerOregon"
-  user_data     = file("./kubeadmuserdata.sh")
+  #user_data     = file("./kubeadmuserdata.sh")
 
   tags = {
 
@@ -518,7 +572,7 @@ resource "aws_security_group" "worker_nodes_security_group" {
 
 }
 
-resource "aws_security_group_rule" "worker-kubelet-API" {
+resource "aws_security_group_rule" "worker-api-kubelet" {
   type      = "ingress"
   from_port = 10250
   to_port   = 10250
@@ -568,6 +622,60 @@ resource "aws_security_group_rule" "bastion-ssh-ingress" {
 
 }
 
+resource "aws_security_group_rule" "worker-port-weave-net-01" {
+
+  type              = "ingress"
+  
+  from_port         = 6783
+  
+  to_port           = 6783
+  
+  protocol          = "tcp"
+  
+  security_group_id = aws_security_group.worker_nodes_security_group.id
+
+  cidr_blocks       = ["0.0.0.0/0"]
+
+  description       = "rule 1 to CNI weavenet"
+
+}
+
+resource "aws_security_group_rule" "worker-port-weave-net-02" {
+
+  type              = "ingress"
+  
+  from_port         = 6783
+  
+  to_port           = 6783
+  
+  protocol          = "udp"
+  
+  security_group_id = aws_security_group.worker_nodes_security_group.id
+
+  cidr_blocks       = ["0.0.0.0/0"]
+
+  description       = "rule 2 to CNI weavenet"
+
+}
+
+resource "aws_security_group_rule" "worker-port-weave-net-03" {
+
+  type              = "ingress"
+  
+  from_port         = 6784
+  
+  to_port           = 6784
+  
+  protocol          = "udp"
+  
+  security_group_id = aws_security_group.worker_nodes_security_group.id
+
+  cidr_blocks       = ["0.0.0.0/0"]
+
+  description       = "rule 3 to CNI weavenet"
+
+}
+
 
 resource "aws_security_group_rule" "egress-worker-rule01" {
 
@@ -592,6 +700,22 @@ resource "aws_security_group_rule" "egress-worker-rule02" {
   from_port         = 443
 
   to_port           = 443
+
+  protocol          = "tcp"
+
+  cidr_blocks       = ["0.0.0.0/0"]
+
+  security_group_id = aws_security_group.worker_nodes_security_group.id
+
+}
+
+resource "aws_security_group_rule" "egress-worker-rule03" {
+
+  type              = "egress"
+
+  from_port         = 6443
+
+  to_port           = 6443
 
   protocol          = "tcp"
 
