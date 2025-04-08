@@ -33,21 +33,14 @@ sudo usermod -aG docker ubuntu && newgrp docker
 
 #testing templatefile
 
-<<<<<<< HEAD
 echo " testing my template variables ${kubectl_version} and ${kubernetes_version} " > /home/ubuntu/testing.txt 
-=======
-sudo echo " testing my template variables ${kubectl_version} and ${kubernetes_version} " > /home/ubuntu/testing.txt 
->>>>>>> 3bfa72e8fabc0a3b4c3c70fddf9ff7231ed4e389
 
 kubectlversion=${kubectl_version}
 
 kubernetesversion=${kubernetes_version}
 
-<<<<<<< HEAD
 echo " minikube start --driver=docker --nodes 2 -p multinode-demo --kubernetes-version $kubernetesversion " > /home/ubuntu/minikube.txt
 
-=======
->>>>>>> 3bfa72e8fabc0a3b4c3c70fddf9ff7231ed4e389
 # Instalar kubectl
 # version 1.32.0
 # curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
@@ -56,20 +49,10 @@ curl -LO "https://dl.k8s.io/release/$kubectlversion/bin/linux/amd64/kubectl"
 
 curl -LO "https://dl.k8s.io/release/$kubectlversion/bin/linux/amd64/kubectl.sha256"
 
- #echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check (validar)
+#echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check (validar)
 
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
 # deploy minikube
 
-<<<<<<< HEAD
-minikube start --driver=docker --nodes 2 -p multinode-demo --kubernetes-version $kubernetesversion
-=======
-# minikube start --driver=docker --kubernetes-version=$kubernetesversion
-
-
-
-
-
->>>>>>> 3bfa72e8fabc0a3b4c3c70fddf9ff7231ed4e389
-
+#minikube start --driver=docker --nodes 2 -p multinode-demo --kubernetes-version $kubernetesversion
