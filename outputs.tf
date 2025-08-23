@@ -1,6 +1,17 @@
-output "minikube_public_ip" {
+#output "bastion_public_ip" {
     
-    value = module.minikube.minikube_public_ip
+ #   value = module.kubernetes_infraestructure.bastion_public_ip
   
-}
+#}
 
+#output "master_node_ip" {
+    
+ #   value = module.kubernetes_infraestructure.master_note_ip
+  
+#}
+
+#output "worker_node_ip" {
+
+ #   value = module.kubernetes_infraestructure.worker_node_ip
+
+#}

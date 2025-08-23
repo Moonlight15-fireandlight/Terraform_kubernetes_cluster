@@ -87,7 +87,7 @@ resource "aws_instance" "ubuntu_server" {
   instance_type = var.instance_type
   key_name      = "DockerOregon"
   #user_data     = data.template_file.init.rendered
-  user_data     = file("./docker.sh") # instalar docker
+  #user_data     = file("./docker.sh") # instalar docker
 
   tags = {
     Name = "Ubuntu_server"

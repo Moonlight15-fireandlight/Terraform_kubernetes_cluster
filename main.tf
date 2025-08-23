@@ -38,12 +38,24 @@ module "minikube" {
 
 #minikube start --driver=docker --nodes 2 -p multinode-demo --kubernetes-version v1.32.0
 
-# module "server_ubuntu" {
+ #module "server_ubuntu" {
 
-#  source            = "./modules/ec2instance"
-#  vpc_cidr          = "172.16.0.0/16"
-#  vpc_dns           = "true"
-#  cidr_pub_subnets  = "172.16.0.0/20"
-#  instance_type     = "t2.medium" #deberia ser micro
+  #source            = "./modules/ec2instance"
+  #vpc_cidr          = "172.16.0.0/16"
+  #vpc_dns           = "true"
+  #cidr_pub_subnets  = "172.16.0.0/20"
+  #instance_type     = "t2.micro" #deberia ser micro
+
+#}
+
+#module "kubernetes_infraestructure" {
+
+#  source                = "./modules/kubernetesInfra"
+#  vpc_cidr              = "172.16.0.0/16"
+#  vpc_dns               = "false"
+#  cidr_pub_subnet       = "172.16.0.0/20"
+#  cidr_priv_subnet      = "172.16.16.0/20"
+#  bastion_instance_type = "t2.micro"
+#  nodes_instance_type   = "t2.medium"
 
 #}

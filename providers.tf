@@ -10,6 +10,13 @@ terraform {
 
   }
 
+
+  backend "s3" {
+    bucket = "backendterraformtestingbucketpaul"
+    key    = "terraform_modules_project/terraform.tfstate"
+    region = "us-west-2"
+  }
+
   required_version = ">= 1.7.4" #version de terraform
 
 }
