@@ -146,9 +146,9 @@ resource "aws_route_table_association" "toprivate" {
 #Creacion del Elastic IP
 resource "aws_eip" "nat_eip" {
 
-  vpc = true
+  domain = "vpc" #Indicates if this EIP is for use in VPC
 
-  tags = {
+  tags   = {
 
     Name = "terraform_eip"
 

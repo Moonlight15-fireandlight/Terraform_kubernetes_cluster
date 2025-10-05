@@ -17,16 +17,16 @@
 
 #APUNTAR EL DOMINIO AL HOST (SERVIDOR )
 
-module "minikube" {
+#module "minikube" {
 
-  source            = "./modules/minikube"
-  vpc_cidr          = "172.16.0.0/16"
-  vpc_dns           = "true"
-  cidr_pub_subnets  = "172.16.0.0/20"
-  mypublicip        = "179.6.168.10/32"
-  instance_type     = "t2.medium"
+#  source            = "./modules/minikube"
+#  vpc_cidr          = "172.16.0.0/16"
+#  vpc_dns           = "true"
+#  cidr_pub_subnets  = "172.16.0.0/20"
+#  mypublicip        = "179.6.168.10/32"
+#  instance_type     = "t2.medium"
 
-}
+#}
 
 #module "upload_images_s3" {
 
@@ -48,14 +48,14 @@ module "minikube" {
 
 #}
 
-#module "kubernetes_infraestructure" {
+module "kubernetes_infraestructure" {
 
-#  source                = "./modules/kubernetesInfra"
-#  vpc_cidr              = "172.16.0.0/16"
-#  vpc_dns               = "false"
-#  cidr_pub_subnet       = "172.16.0.0/20"
-#  cidr_priv_subnet      = "172.16.16.0/20"
-#  bastion_instance_type = "t2.micro"
-#  nodes_instance_type   = "t2.medium"
+  source                = "./modules/kubernetesInfra"
+  vpc_cidr              = "172.16.0.0/16"
+  vpc_dns               = "false"
+  cidr_pub_subnet       = "172.16.0.0/20"
+  cidr_priv_subnet      = "172.16.16.0/20"
+  bastion_instance_type = "t2.micro"
+  nodes_instance_type   = "t2.medium"
 
-#}
+}
