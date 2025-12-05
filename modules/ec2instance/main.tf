@@ -193,8 +193,8 @@ resource "aws_security_group_rule" "egress_rule" {
 }
 
 
-output "server_public_ip" {
+#output "server_public_ip" {
 
-  value = aws_instance.ubuntu_server.public_ip
+#  value = aws_instance.ubuntu_server.public_ip
   
-}
+#}

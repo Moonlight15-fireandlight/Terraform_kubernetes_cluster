@@ -15,3 +15,9 @@ output "worker_node_ip" {
     value = module.kubernetes_infraestructure.worker_node_ip
 
 }
+
+#output "server_ubuntu" {
+
+#    value = module.server_ubuntu.server_public_ip
+  
+#}

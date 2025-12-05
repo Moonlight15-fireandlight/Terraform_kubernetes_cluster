@@ -2,6 +2,12 @@
 
 # por versiones
 
+# Disable swap
+
+sudo swapoff -a
+
+##
+
 cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
 net.ipv4.ip_forward = 1
 EOF

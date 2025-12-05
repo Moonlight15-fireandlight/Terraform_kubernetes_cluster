@@ -44,9 +44,9 @@
   #vpc_cidr          = "172.16.0.0/16"
   #vpc_dns           = "true"
   #cidr_pub_subnets  = "172.16.0.0/20"
-  #instance_type     = "t2.micro" #deberia ser micro
+  #instance_type     = "t2.medium" #deberia ser micro
 
-#}
+  #}
 
 module "kubernetes_infraestructure" {
 
